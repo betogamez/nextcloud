@@ -1,0 +1,79 @@
+version: "2.3"
+services:
+  nextcloud: # IP: 172.90.0.57
+    #image: linuxserver/nextcloud:25.0.2
+    image: linuxserver/nextcloud:27.0.0
+    container_name: nextcloud
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Monterrey
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER}
+      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}
+      NEXTCLOUD_DATA_DIR: ${NEXTCLOUD_DATA_DIR}
+      NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_TRUSTED_DOMAINS}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES}
+      APACHE_DISABLE_REWRITE_IP: ${APACHE_DISABLE_REWRITE_IP}
+      OVERWRITEPROTOCOL: ${OVERWRITEPROTOCOL}
+      OVERWRITEHOST: ${OVERWRITEHOST}
+      OVERWRITECLIURL: ${OVERWRITECLIURL}
+      FORWARDED_FOR_HEADERS: ${FORWARDED_FOR_HEADERS}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_HOST: ${MYSQL_HOST}
+      REDIS_HOST: ${REDIS_HOST}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_AUTHTYPE: ${SMTP_AUTHTYPE}
+      SMTP_NAME: ${SMTP_NAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_DOMAIN: ${MAIL_DOMAIN}
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT}
+      PHP_UPLOAD_LIMIT: ${PHP_UPLOAD_LIMIT}
+    volumes:
+      - ${NEXTCLOUD_ROOT}/html:${NEXTCLOUD_MAIN}
+      - ${NEXTCLOUD_ROOT}/config:/config
+      - ${NEXTCLOUD_ROOT}/data:${NEXTCLOUD_DATA_DIR}
+      - ./conf.d/php.ini:/usr/local/etc/php/conf.d/php.ini
+      - ./conf.d/nginx.conf:/config/nginx/nginx.conf
+    depends_on:
+      - cloud-db
+      - redis
+    expose:
+      - "443"
+    restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 172.90.0.57
+  cloud-db: # IP: 172.90.0.58
+    image: mariadb:latest
+    container_name: cloud-db
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - ${NEXTCLOUD_ROOT}/mysql/:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 172.90.0.58
+  redis: # IP: 172.90.0.59
+    image: redis
+    container_name: redis
+    networks:
+      default:
+        ipv4_address: 172.90.0.59
+    restart: unless-stopped
+
+networks:
+  default:
+    name: wgnet
+    external: true
